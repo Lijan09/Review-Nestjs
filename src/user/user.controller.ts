@@ -1,42 +1,50 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
-  Patch,
   Param,
   Delete,
+  Request,
+  UseGuards,
+  Response,
+  Put,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('user')
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
-  }
-
-  @Get()
+  @Get('all')
+  //needs guard for admin access
   findAll() {
     return this.userService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  @Get()
+  async findOne(@Request() req, @Response() res) {
+    const result = await this.userService.findOne(req.user.username);
+    const { password, ...userWithoutPassword } = result.toObject();
+    return res.status(200).json(userWithoutPassword);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(updateUserDto);
+  @Put()
+  update(
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
+    @Response() res,
+  ) {
+    const result = this.userService.update(updateUserDto, req.user.username);
+    return res.status(200).json(result);
   }
 
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  @Delete()
+  remove(@Request() req, @Response() res) {
+    const result = this.userService.delete(req.user.username);
+    return res.status(200).json(result);
   }
 }

@@ -1,4 +1,8 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { User } from './entities/user.entity';
 import { Model } from 'mongoose';
@@ -15,22 +19,57 @@ export class UserRepository {
       password: createData.password,
       role: createData.role || 'user',
     };
+    const existingUser = await this.userModel.findOne({
+      username: data.username,
+    });
+    if (existingUser) {
+      throw new BadRequestException(
+        `User with username ${data.username} already exists`,
+      );
+    }
     const user = new this.userModel(data);
     await user.save();
     return user;
   }
+
   async findAllUsers() {
-    const user = await this.userModel.find();
-    return user;
+    const users = await this.userModel.find();
+    return users;
   }
+
   async findUser(username: string) {
-    const user = await this.userModel.findOne({ username });
+    const user = await this.userModel.findOne({ username: username });
+    if (!user) {
+      throw new NotFoundException(`User with username ${username} not found`);
+    }
     return user;
   }
-  updateUser(updateData: UpdateUserDto) {
-    return `User with ID`;
+
+  async updateUser(updateData: UpdateUserDto) {
+    const user = await this.userModel.findOne({
+      username: updateData.username,
+    });
+    if (!user) {
+      throw new NotFoundException(
+        `User with username ${updateData.username} not found`,
+      );
+    }
+    if (updateData.password) {
+      user.password = updateData.password;
+    }
+    await user.save();
+
+    return user;
   }
-  deleteUser(id: string): string {
-    return `User with ID: ${id} deleted`;
+
+  async deleteUser(userdata: CreateUserDto) {
+    const user = await this.userModel.findOne({ username: userdata.username });
+    if (!user) {
+      throw new NotFoundException(
+        `User with username ${userdata.username} not found`,
+      );
+    }
+    await user.deleteOne();
+    return user;
   }
 }
