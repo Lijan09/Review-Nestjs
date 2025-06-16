@@ -2,6 +2,7 @@ import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRepository } from './user.repository';
+import passwordUtils from 'src/utils/password.utils';
 
 @Injectable()
 export class UserService {
@@ -31,7 +32,26 @@ export class UserService {
   }
 
   async update(updateData: UpdateUserDto, username: string) {
+    if (!updateData.newPassword || !updateData.oldPassword) {
+      throw new BadRequestException(
+        'Both old and new passwords are required to update a user.',
+      );
+    }
     updateData.username = username;
+    const existing = await this.findOne(updateData.username);
+    if (!existing) {
+      throw new BadRequestException(
+        `User with username ${updateData.username} does not exist.`,
+      );
+    }
+    const isValid = await passwordUtils.validatePassword(
+      updateData.oldPassword,
+      existing.password,
+    );
+    console.log(isValid);
+    if (!isValid) {
+      throw new BadRequestException('Invalid old password provided.');
+    }
     const user = await this.userRepository.updateUser(updateData);
     const { password, ...userWithoutPassword } = user.toObject();
     return userWithoutPassword;

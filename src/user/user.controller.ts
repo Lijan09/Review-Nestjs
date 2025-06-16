@@ -2,7 +2,6 @@ import {
   Controller,
   Get,
   Body,
-  Param,
   Delete,
   Request,
   UseGuards,
@@ -12,7 +11,6 @@ import {
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
-import { CreateUserDto } from './dto/create-user.dto';
 
 @Controller('user')
 @UseGuards(JwtAuthGuard)
@@ -21,8 +19,8 @@ export class UserController {
 
   @Get('all')
   //needs guard for admin access
-  findAll() {
-    return this.userService.findAll();
+  async findAll() {
+    return await this.userService.findAll();
   }
 
   @Get()
@@ -33,18 +31,22 @@ export class UserController {
   }
 
   @Put()
-  update(
+  async update(
     @Body() updateUserDto: UpdateUserDto,
     @Request() req,
     @Response() res,
   ) {
-    const result = this.userService.update(updateUserDto, req.user.username);
+    console.log('updateUserDto: ', updateUserDto);
+    const result = await this.userService.update(
+      updateUserDto,
+      req.user.username,
+    );
     return res.status(200).json(result);
   }
 
   @Delete()
-  remove(@Request() req, @Response() res) {
-    const result = this.userService.delete(req.user.username);
+  async delete(@Request() req, @Response() res) {
+    const result = await this.userService.delete(req.user.username);
     return res.status(200).json(result);
   }
 }

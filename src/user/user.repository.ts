@@ -46,6 +46,7 @@ export class UserRepository {
   }
 
   async updateUser(updateData: UpdateUserDto) {
+    console.log('Updating user with data:', updateData);
     const user = await this.userModel.findOne({
       username: updateData.username,
     });
@@ -54,10 +55,11 @@ export class UserRepository {
         `User with username ${updateData.username} not found`,
       );
     }
-    if (updateData.password) {
-      user.password = updateData.password;
+    if (updateData.newPassword) {
+      user.password = updateData.newPassword;
     }
     await user.save();
+    console.log('User updated:', user);
 
     return user;
   }
