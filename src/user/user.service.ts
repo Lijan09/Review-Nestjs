@@ -3,6 +3,7 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRepository } from './user.repository';
 import passwordUtils from 'src/utils/password.utils';
+import { ResetTokenDto } from './dto/reset-token.dto';
 
 @Injectable()
 export class UserService {
@@ -60,5 +61,14 @@ export class UserService {
     const user = await this.userRepository.deleteUser(userData);
     const { password, ...userWithoutPassword } = user.toObject();
     return userWithoutPassword;
+  }
+
+  async setToken(resetData: ResetTokenDto) {
+    await this.userRepository.setToken(resetData);
+  }
+
+  async updatePassword(resetData: ResetTokenDto) {
+    const user = await this.userRepository.updatePassword(resetData);
+    return user;
   }
 }

@@ -8,6 +8,7 @@ import { User } from './entities/user.entity';
 import { Model } from 'mongoose';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { ResetTokenDto } from './dto/reset-token.dto';
 
 @Injectable()
 export class UserRepository {
@@ -73,5 +74,32 @@ export class UserRepository {
     }
     await user.deleteOne();
     return user;
+  }
+
+  async setToken(resetData: ResetTokenDto) {
+    const user = await this.userModel.findOne({ username: resetData.username });
+    if (!user) {
+      throw new NotFoundException(
+        `User with username ${resetData.username} not found`,
+      );
+    }
+    user.resetToken = resetData.resetToken;
+    await user.save();
+  }
+
+  async updatePassword(resetData: ResetTokenDto) {
+    const user = await this.userModel.findOne({
+      resetToken: resetData.resetToken,
+    });
+    if (!user) {
+      throw new NotFoundException(
+        `User with reset token ${resetData.resetToken} not found`,
+      );
+    }
+    user.password = resetData.newPassword;
+    user.resetToken = null;
+    await user.save();
+    const { password, ...userWithoutPassword } = user.toObject();
+    return userWithoutPassword;
   }
 }
