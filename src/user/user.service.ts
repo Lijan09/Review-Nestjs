@@ -31,14 +31,13 @@ export class UserService {
     return user;
   }
 
-  async update(updateData: UpdateUserDto, username: string) {
+  async update(updateData: UpdateUserDto) {
     if (!updateData.newPassword || !updateData.oldPassword) {
       throw new BadRequestException(
         'Both old and new passwords are required to update a user.',
       );
     }
-    updateData.username = username;
-    const existing = await this.findOne(updateData.username);
+    const existing = await this.findOne(updateData.username as string);
     if (!existing) {
       throw new BadRequestException(
         `User with username ${updateData.username} does not exist.`,

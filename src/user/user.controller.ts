@@ -37,10 +37,8 @@ export class UserController {
     @Response() res,
   ) {
     console.log('updateUserDto: ', updateUserDto);
-    const result = await this.userService.update(
-      updateUserDto,
-      req.user.username,
-    );
+    updateUserDto.username = req.user.username;
+    const result = await this.userService.update(updateUserDto);
     return res.status(200).json(result);
   }
 

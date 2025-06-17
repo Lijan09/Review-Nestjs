@@ -4,27 +4,24 @@ import {
   Post,
   Request,
   Response,
+  UseFilters,
   UseGuards,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { LocalAuthGuard } from './local-auth.guard';
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
 import { JwtAuthGuard } from './jwt-auth.guard';
+import { HttpExceptionFilter } from '../utils/exception.filter';
 
 @Controller('auth')
+// @UseFilters(HttpExceptionFilter)
 export class AuthController {
   constructor(private authService: AuthService) {}
 
   @Post('register')
   async register(@Body() createUserDto: CreateUserDto, @Response() res) {
-    try {
-      const result = await this.authService.register(createUserDto);
-      return res.status(201).json(result);
-    } catch (error) {
-      return res.status(400).json({
-        message: error.message || 'Registration failed',
-      });
-    }
+    const result = await this.authService.register(createUserDto);
+    return res.status(201).json(result);
   }
 
   @UseGuards(LocalAuthGuard) //validates user credentials
