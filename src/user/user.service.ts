@@ -71,4 +71,15 @@ export class UserService {
     const user = await this.userRepository.updatePassword(resetData);
     return user;
   }
+
+  async getUserId(username: string) {
+    const user = await this.userRepository.findUser(username);
+    if (!user) {
+      throw new BadRequestException(
+        `User with username ${username} not found.`,
+      );
+    }
+    const id = user._id;
+    return id;
+  }
 }
