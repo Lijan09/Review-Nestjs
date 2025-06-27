@@ -1,13 +1,26 @@
 import { CreateUserDto } from 'src/user/dto/create-user.dto';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRepository } from './user.repository';
 import passwordUtils from 'src/utils/password.utils';
 import { ResetTokenDto } from './dto/reset-token.dto';
+import { PostService } from 'src/post/post.service';
+import { ReviewService } from 'src/review/review.service';
 
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    @Inject(forwardRef(() => PostService))
+    private readonly postService: PostService,
+    @Inject(forwardRef(() => ReviewService))
+    private readonly reviewService: ReviewService,
+  ) {}
 
   async createUser(createData: CreateUserDto) {
     if (!createData.username || !createData.password) {
@@ -16,6 +29,20 @@ export class UserService {
       );
     }
     return await this.userRepository.createUser(createData);
+  }
+
+  async getPosts(username: string) {
+    const userId = await this.getUserId(username);
+    console.log('User ID:', userId, username);
+    const posts = await this.postService.getPostsByUserId(userId);
+    return posts;
+  }
+
+  async getReviews(username: string) {
+    const userId = await this.getUserId(username);
+    console.log('User ID:', userId, username);
+    const reviews = await this.reviewService.getReviewsByUserId(userId);
+    return reviews;
   }
 
   async findAll() {

@@ -5,7 +5,7 @@ import { PostSchema } from '../post/entities/post.entity';
 const MONGO_URI =
   process.env.MONGO_URI || 'mongodb://localhost:27017/review-app';
 
-const NUM_POSTS = 20;
+const NUM_POSTS = 120;
 
 async function seedPosts() {
   try {

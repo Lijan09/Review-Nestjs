@@ -1,7 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectModel } from '@nestjs/mongoose';
 import { Review } from './entities/review.entity';
-import { Model, Types, Schema } from 'mongoose';
+import { Model, Schema } from 'mongoose';
 import { CreateReviewDto } from './dto/create-review.dto';
 import { UpdateReviewDto } from './dto/update-review.dto';
 
@@ -9,11 +9,22 @@ import { UpdateReviewDto } from './dto/update-review.dto';
 export class ReviewRepository {
   constructor(@InjectModel(Review.name) private reviewModel: Model<Review>) {}
 
+  async getReviewsByPostId(postId: string) {
+    const reviews = await this.reviewModel
+      .find({ postId: postId })
+      .populate('userId', 'username');
+    console.log('Reviews:', reviews);
+    if (!reviews || reviews.length === 0) {
+      throw new NotFoundException(
+        `No reviews found for post with id ${postId}`,
+      );
+    }
+    return reviews;
+  }
+
   async createReview(userId: Schema.Types.ObjectId, dto: CreateReviewDto) {
-    const reviewCount = await this.reviewModel.countDocuments();
     const review = new this.reviewModel({
       ...dto,
-      id: reviewCount + 1,
       userId,
     });
     return await review.save();
@@ -26,25 +37,39 @@ export class ReviewRepository {
       .populate('postId');
   }
 
-  async findOne(id: number) {
+  async getReviewsByUserId(userId: Schema.Types.ObjectId) {
+    const reviews = await this.reviewModel
+      .find({ userId: userId })
+      .populate('postId')
+      .exec();
+    if (!reviews || reviews.length === 0) {
+      throw new NotFoundException(`No reviews found for user`);
+    }
+    return reviews;
+  }
+
+  async findOne(uuid: string) {
     const review = await this.reviewModel
-      .findOne({ id })
+      .findOne({ uuid })
       .populate('userId', 'username');
-    if (!review) throw new NotFoundException(`Review with id ${id} not found`);
+    if (!review)
+      throw new NotFoundException(`Review with uuid ${uuid} not found`);
     return review;
   }
 
-  async updateReview(id: number, dto: UpdateReviewDto) {
-    const review = await this.reviewModel.findOneAndUpdate({ id }, dto, {
+  async updateReview(uuid: string, dto: UpdateReviewDto) {
+    const review = await this.reviewModel.findOneAndUpdate({ uuid }, dto, {
       new: true,
     });
-    if (!review) throw new NotFoundException(`Review with id ${id} not found`);
+    if (!review)
+      throw new NotFoundException(`Review with uuid ${uuid} not found`);
     return review;
   }
 
-  async deleteReview(id: number) {
-    const review = await this.reviewModel.findOneAndDelete({ id });
-    if (!review) throw new NotFoundException(`Review with id ${id} not found`);
+  async deleteReview(uuid: string) {
+    const review = await this.reviewModel.findOneAndDelete({ uuid });
+    if (!review)
+      throw new NotFoundException(`Review with uuid ${uuid} not found`);
     return review;
   }
 }

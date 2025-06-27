@@ -8,7 +8,6 @@ import {
   Put,
   Request,
   UseGuards,
-  ParseIntPipe,
 } from '@nestjs/common';
 import { ReviewService } from './review.service';
 import { CreateReviewDto } from './dto/create-review.dto';
@@ -22,7 +21,7 @@ export class ReviewController {
 
   @Post()
   create(@Request() req, @Body() dto: CreateReviewDto) {
-    console.log(req.user);
+    console.log(dto);
     return this.reviewService.create(req.user.username, dto);
   }
 
@@ -31,18 +30,18 @@ export class ReviewController {
     return this.reviewService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
-    return this.reviewService.findOne(id);
+  @Get(':uuid')
+  findOne(@Param('uuid') uuid: string) {
+    return this.reviewService.findOne(uuid);
   }
 
-  @Put(':id')
-  update(@Param('id', ParseIntPipe) id: number, @Body() dto: UpdateReviewDto) {
-    return this.reviewService.update(id, dto);
+  @Put(':uuid')
+  update(@Param('uuid') uuid: string, @Body() dto: UpdateReviewDto) {
+    return this.reviewService.update(uuid, dto);
   }
 
-  @Delete(':id')
-  delete(@Param('id', ParseIntPipe) id: number) {
-    return this.reviewService.delete(id);
+  @Delete(':uuid')
+  delete(@Param('uuid') uuid: string) {
+    return this.reviewService.delete(uuid);
   }
 }

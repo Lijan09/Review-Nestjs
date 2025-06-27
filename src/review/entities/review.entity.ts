@@ -1,15 +1,16 @@
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
 import { Types } from 'mongoose';
+import { v4 as uuidv4 } from 'uuid';
 
 @Schema()
 export class Review {
   _id: Types.ObjectId;
 
-  @Prop({ required: true, unique: true })
-  id: number;
+  @Prop({ default: uuidv4, unique: true })
+  uuid: string;
 
   @Prop({ ref: 'Post', required: true })
-  postId: Types.ObjectId;
+  postId: string;
 
   @Prop({ ref: 'User', required: true })
   userId: Types.ObjectId;

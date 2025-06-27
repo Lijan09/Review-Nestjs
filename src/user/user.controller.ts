@@ -23,6 +23,18 @@ export class UserController {
     return await this.userService.findAll();
   }
 
+  @Get('posts')
+  async getPost(@Request() req, @Response() res) {
+    const posts = await this.userService.getPosts(req.user.username);
+    return res.status(200).json(posts);
+  }
+
+  @Get('reviews')
+  async getReviews(@Request() req, @Response() res) {
+    const reviews = await this.userService.getReviews(req.user.username);
+    return res.status(200).json(reviews);
+  }
+
   @Get()
   async findOne(@Request() req, @Response() res) {
     const result = await this.userService.findOne(req.user.username);
