@@ -1,42 +1,63 @@
 import {
   Controller,
   Get,
-  Post,
   Body,
-  Patch,
-  Param,
   Delete,
+  Request,
+  UseGuards,
+  Response,
+  Put,
 } from '@nestjs/common';
 import { UserService } from './user.service';
-import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Post } from 'src/post/entities/post.entity';
 
 @Controller('user')
+@UseGuards(JwtAuthGuard)
 export class UserController {
   constructor(private readonly userService: UserService) {}
 
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.userService.create(createUserDto);
+  @Get('all')
+  //needs guard for admin access
+  async findAll() {
+    return await this.userService.findAll();
+  }
+
+  @Get('posts')
+  async getPost(@Request() req, @Response() res): Promise<Post[]> {
+    const posts = await this.userService.getPosts(req.user.username);
+    return res.status(200).json(posts);
+  }
+
+  @Get('reviews')
+  async getReviews(@Request() req, @Response() res) {
+    const reviews = await this.userService.getReviews(req.user.username);
+    return res.status(200).json(reviews);
   }
 
   @Get()
-  findAll() {
-    return this.userService.findAll();
+  async findOne(@Request() req, @Response() res) {
+    const result = await this.userService.findOne(req.user.username);
+    const { password, ...userWithoutPassword } = result.toObject();
+    return res.status(200).json(userWithoutPassword);
   }
 
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.userService.findOne(+id);
+  @Put()
+  async update(
+    @Body() updateUserDto: UpdateUserDto,
+    @Request() req,
+    @Response() res,
+  ) {
+    console.log('updateUserDto: ', updateUserDto);
+    updateUserDto.username = req.user.username;
+    const result = await this.userService.update(updateUserDto);
+    return res.status(200).json(result);
   }
 
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
-    return this.userService.update(updateUserDto);
-  }
-
-  @Delete(':id')
-  remove(@Param('id') id: string) {
-    return this.userService.remove(+id);
+  @Delete()
+  async delete(@Request() req, @Response() res) {
+    const result = await this.userService.delete(req.user.username);
+    return res.status(200).json(result);
   }
 }

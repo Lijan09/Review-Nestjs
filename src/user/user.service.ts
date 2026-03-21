@@ -1,29 +1,124 @@
-import { Injectable } from '@nestjs/common';
-import { CreateUserDto } from './dto/create-user.dto';
+import { CreateUserDto } from 'src/user/dto/create-user.dto';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from '@nestjs/common';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserRepository } from './user.repository';
+import passwordUtils from 'src/utils/password.utils';
+import { ResetTokenDto } from './dto/reset-token.dto';
+import { PostService } from 'src/post/post.service';
+import { ReviewService } from 'src/review/review.service';
+import { Review } from 'src/review/entities/review.entity';
+import { Post } from 'src/post/entities/post.entity';
 
+type ReviewWithPost = Review & { post?: Post | null };
 @Injectable()
 export class UserService {
-  constructor(private readonly userRepository: UserRepository) {}
+  constructor(
+    private readonly userRepository: UserRepository,
+    @Inject(forwardRef(() => PostService))
+    private readonly postService: PostService,
+    @Inject(forwardRef(() => ReviewService))
+    private readonly reviewService: ReviewService,
+  ) {}
 
-  create(createUserDto: CreateUserDto) {
-    this.userRepository.createUser(createUserDto);
+  async createUser(createData: CreateUserDto) {
+    if (!createData.username || !createData.password) {
+      throw new BadRequestException(
+        'Username and password are required to create a user.',
+      );
+    }
+    return await this.userRepository.createUser(createData);
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async getPosts(username: string) {
+    const userId = await this.getUserId(username);
+    console.log('User ID:', userId, username);
+    const posts = await this.postService.getPostsByUserId(userId);
+    return posts;
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async getReviews(username: string) {
+    const userId = await this.getUserId(username);
+    console.log('User ID:', userId, username);
+    const reviews = await this.reviewService.getReviewsByUserId(userId);
+    // Populate postId with post data from db
+    for (const review of reviews) {
+      review.postId = JSON.stringify(
+        await this.postService.getPostById({
+          uuid: review.postId,
+        }),
+      );
+    }
+    console.log('Reviews with posts:', reviews);
+    return reviews;
   }
 
-  update(updateUserDto: UpdateUserDto) {
-    this.userRepository.updateUser(updateUserDto);
+  async findAll() {
+    const users = await this.userRepository.findAllUsers();
+    return users.map((user) => {
+      const { password, ...userWithoutPassword } = user.toObject();
+      return userWithoutPassword;
+    });
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async findOne(username: string) {
+    console.log('Finding user with data:', username);
+    const user = await this.userRepository.findUser(username);
+    return user;
+  }
+
+  async update(updateData: UpdateUserDto) {
+    if (!updateData.newPassword || !updateData.oldPassword) {
+      throw new BadRequestException(
+        'Both old and new passwords are required to update a user.',
+      );
+    }
+    const existing = await this.findOne(updateData.username as string);
+    if (!existing) {
+      throw new BadRequestException(
+        `User with username ${updateData.username} does not exist.`,
+      );
+    }
+    const isValid = await passwordUtils.validatePassword(
+      updateData.oldPassword,
+      existing.password,
+    );
+    console.log(isValid);
+    if (!isValid) {
+      throw new BadRequestException('Invalid old password provided.');
+    }
+    const user = await this.userRepository.updateUser(updateData);
+    const { password, ...userWithoutPassword } = user.toObject();
+    return userWithoutPassword;
+  }
+
+  async delete(userData: CreateUserDto) {
+    const user = await this.userRepository.deleteUser(userData);
+    const { password, ...userWithoutPassword } = user.toObject();
+    return userWithoutPassword;
+  }
+
+  async setToken(resetData: ResetTokenDto) {
+    await this.userRepository.setToken(resetData);
+  }
+
+  async updatePassword(resetData: ResetTokenDto) {
+    const user = await this.userRepository.updatePassword(resetData);
+    return user;
+  }
+
+  async getUserId(username: string) {
+    const user = await this.userRepository.findUser(username);
+    if (!user) {
+      throw new BadRequestException(
+        `User with username ${username} not found.`,
+      );
+    }
+    const id = user._id;
+    return id;
   }
 }
