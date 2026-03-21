@@ -38,10 +38,8 @@ export class ReviewRepository {
   }
 
   async getReviewsByUserId(userId: Schema.Types.ObjectId) {
-    const reviews = await this.reviewModel
-      .find({ userId: userId })
-      .populate('postId')
-      .exec();
+    const reviews = await this.reviewModel.find({ userId: userId }).exec();
+    console.log('Reviews for user:', reviews);
     if (!reviews || reviews.length === 0) {
       throw new NotFoundException(`No reviews found for user`);
     }

@@ -47,20 +47,13 @@ export class PostController {
   @Get(':uuid')
   async getPostById(@Response() res, @Param('uuid') uuid: string) {
     const result = await this.postService.getPostById({ uuid });
-    if (!result) {
-      return res.status(404).json({ message: 'Post not found' });
-    }
     return res.status(200).json(result);
   }
 
   @Get('/:uuid/review')
   async getReviewsByPostId(@Response() res, @Param('uuid') uuid: string) {
     const reviews = await this.postService.getReviewsByPostId(uuid);
-    if (!reviews) {
-      return res
-        .status(404)
-        .json({ message: 'Reviews not found for this post' });
-    }
+
     return res.status(200).json(reviews);
   }
 

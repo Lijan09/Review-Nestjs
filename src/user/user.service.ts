@@ -11,7 +11,10 @@ import passwordUtils from 'src/utils/password.utils';
 import { ResetTokenDto } from './dto/reset-token.dto';
 import { PostService } from 'src/post/post.service';
 import { ReviewService } from 'src/review/review.service';
+import { Review } from 'src/review/entities/review.entity';
+import { Post } from 'src/post/entities/post.entity';
 
+type ReviewWithPost = Review & { post?: Post | null };
 @Injectable()
 export class UserService {
   constructor(
@@ -42,6 +45,15 @@ export class UserService {
     const userId = await this.getUserId(username);
     console.log('User ID:', userId, username);
     const reviews = await this.reviewService.getReviewsByUserId(userId);
+    // Populate postId with post data from db
+    for (const review of reviews) {
+      review.postId = JSON.stringify(
+        await this.postService.getPostById({
+          uuid: review.postId,
+        }),
+      );
+    }
+    console.log('Reviews with posts:', reviews);
     return reviews;
   }
 

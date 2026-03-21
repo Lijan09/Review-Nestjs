@@ -11,6 +11,7 @@ import {
 import { UserService } from './user.service';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { JwtAuthGuard } from 'src/auth/jwt-auth.guard';
+import { Post } from 'src/post/entities/post.entity';
 
 @Controller('user')
 @UseGuards(JwtAuthGuard)
@@ -24,7 +25,7 @@ export class UserController {
   }
 
   @Get('posts')
-  async getPost(@Request() req, @Response() res) {
+  async getPost(@Request() req, @Response() res): Promise<Post[]> {
     const posts = await this.userService.getPosts(req.user.username);
     return res.status(200).json(posts);
   }
